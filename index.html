@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@5.x/css/materialdesignicons.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+</head>
+<body>
+  <div id="app">
+    <v-app>
+      <v-main>
+        <v-card class="mx-auto mt-5" max-width="1400">
+
+              <v-toolbar dense>
+                <v-btn class="ma-2" fab small dark color="indigo" @clicK="formNuevo()">
+                    <v-icon dark>mdi-plus</v-icon> 
+                  </v-btn>
+                  <v-toolbar-title class="center">Alumnos</v-toolbar-title>
+                  <v-spacer></v-spacer>
+                  <v-switch
+                        v-model="$vuetify.theme.dark"
+                        hide-details
+                        inset
+                        label="Tema Oscuro">
+                  </v-switch>
+              </v-toolbar>
+
+            <v-simple-table class="mt-5">
+                <template v-slot:default>
+                    <thead>
+                        <tr class="cyan darken-1">
+                            <th class="white--text">ID</th>
+                            <th class="white--text">Nombres</th>
+                            <th class="white--text">Apellidos</th>
+                            <th class="white--text">Edad</th>
+                            <th class="white--text">Grado</th>
+                            <th class="white--text">Opciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="alumno in alumnos" :key="alumno.id">
+                            <td>{{ alumno.id }}</td>
+                            <td>{{ alumno.nombres }}</td>
+                            <td>{{ alumno.apellidos }}</td>
+                            <td>{{ alumno.edad }}</td>
+                            <td>{{ alumno.grado }}</td>
+                            <td>
+                                <v-btn color="green lighten-1" fab small dark @click="formEditar(alumno.id,alumno.nombres,alumno.apellidos,alumno.edad,alumno.grado)">
+                                    <v-icon>mdi-pencil</v-icon>
+                                </v-btn>
+                                <v-btn color="red lighten-1" fab small dark @click="borrar(alumno.id)">
+                                    <v-icon>mdi-delete</v-icon>
+                                </v-btn>
+                            </td>
+                        </tr>
+                    </tbody>
+                </template>
+            </v-simple-table>
+
+            <v-dialog v-model="dialog" max-width="500">
+                <v-card>
+                    <v-card-title class="blue-grey darken-2 white--text">Alumnos</v-card-title>
+                        <v-card-text>
+                            <v-form>
+                                <v-container>
+                                    <v-row>
+                                        <input v-model="alumno.id" hidden></input>
+                                        <v-col cols="12" md="12">
+                                            <v-text-field 
+                                                v-model="alumno.nombres"
+                                                label="Nombres"
+                                                solo required>{{alumno.nombres}}
+                                            </v-text-field>
+                                        </v-col>
+                                        <v-col cols="12" md="12">
+                                            <v-text-field 
+                                                v-model="alumno.apellidos"
+                                                label="Apellidos"
+                                                solo required>{{alumno.apellidos}}
+                                            </v-text-field>
+                                        </v-col>
+                                        <v-col cols="12" md="4">
+                                            <v-text-field 
+                                                v-model="alumno.edad"
+                                                label="Edad"
+                                                type="number"
+                                                solo required>
+                                            </v-text-field>
+                                        </v-col>
+                                        <v-col cols="12" md="8">
+                                            <v-text-field 
+                                                v-model="alumno.grado"
+                                                label="Grado"
+                                                solo required>{{alumno.grado}}
+                                            </v-text-field>
+                                        </v-col>
+                                    </v-row>
+                                </v-container>
+                            </v-card-text>
+                            <v-card-actions>
+                                <v-spacer></v-spacer>
+                                <v-btn @click="dialog=false">Cancelar</v-btn>
+                                <v-btn @click="guardar()" type="submit" color="indigo" dark>Guardar</v-btn>
+                            </v-card-actions>
+                        </v-form>
+                </v-card>
+            </v-dialog>
+
+        </v-card>
+      </v-main>
+    </v-app>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10.3.0/dist/sweetalert2.all.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.20.0/axios.min.js" integrity="sha512-quHCp3WbBNkwLfYUMd+KwBAgpVukJu5MncuQaWXgCrfgcxCJAq/fo+oqrRKOj+UKEmyMCG3tb8RB63W+EmrOBg==" crossorigin="anonymous"></script>
+
+  <script>
+    export default {
+      props: {
+        attrs: {
+          type: Object,
+          default: () => ({}),
+        },
+      },
+  
+      data: vm => ({
+        initialDark: vm.$vuetify
+          ? vm.$vuetify.theme.dark
+          : false,
+      }),
+  
+      beforeDestroy () {
+        if (!this.$vuetify) return
+  
+        this.$vuetify.theme.dark = this.initialDark
+      },
+    }
+  </script>
+
+  <script>
+    var url="http://localhost/CRUDS/crud-vuetify/crud.php";
+    new Vue({
+      el: '#app',
+      vuetify: new Vuetify(),
+      data(){
+          return{
+              alumnos:[],
+              dialog:false,
+              operacion:'',
+              alumno:{
+                  id:null,
+                  nombres:'',
+                  apellidos:'',
+                  edad:'',
+                  grado:''
+              }
+          }
+      },
+      created(){
+          this.mostrar()
+      },
+
+      methods:{
+          //Método para el CRUD
+          mostrar:function(){
+              axios.post(url,{opcion:1})
+              .then(response =>{
+                  this.alumnos= response.data
+              })
+          },
+          crear:function(){
+              axios.post(url,{opcion:2, nombres:this.alumno.nombres,apellidos:this.alumno.apellidos,edad:this.alumno.edad,grado:this.alumno.grado})
+              .then(response =>{
+                  this.mostrar();
+              });
+              this.alumno.nombres="";
+              this.alumno.apellidos="";
+              this.alumno.edad="";
+              this.alumno.grado="";
+          },
+          editar:function(id, nombres, apellidos, edad, grado){
+            axios.post(url, {opcion:3, id:this.alumno.id, nombres:this.alumno.nombres,apellidos:this.alumno.apellidos,edad:this.alumno.edad,grado:this.alumno.grado})
+            .then(response =>{
+                this.mostrar();
+            })
+          },
+
+          borrar:function(id){
+            Swal.fire({
+                title:'¿Desea eliminar alumno?',
+                confirmButtonText:'Confirmar',
+                showCancelButton:true,
+            }).then((result) => {
+                if(result.isConfirmed){
+                    axios.post(url, {opcion:4,id:id}).then(response =>{
+                        this.mostrar();
+                    });
+                    Swal.fire('Eliminado','','success')
+                }else if(result.isDenied){
+
+                }
+            })
+          },
+
+          //Botones y formularios
+          guardar:function(){
+              if(this.operacion=='crear'){
+                  this.crear();
+              }
+              if(this.operacion=='editar'){
+                  this.editar();
+              }
+              this.dialog=false;
+          },
+          formNuevo:function(){
+              this.dialog=true;
+              this.operacion='crear';
+              this.alumno.nombres="";
+              this.alumno.apellidos="";
+              this.alumno.edad="";
+              this.alumno.grado="";
+          },
+          formEditar:function(id,nombres,apellidos,edad,grado){
+              this.alumno.id=id;
+              this.alumno.nombres=nombres;
+              this.alumno.apellidos=apellidos;
+              this.alumno.edad=edad;
+              this.alumno.grado=grado;
+              this.dialog=true;
+              this.operacion='editar';
+          }
+      }
+    })
+  </script>
+</body>
+</html>
